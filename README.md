@@ -26,3 +26,6 @@ Cloudformation creates those for you in the right order with the exact configura
 - Don't re-invent the wheel
     - Leverage existing templates on the web
     - Leverage Documentation
+
+
+https://github.com/awslabs/ecs-refarch-continuous-deployment

@@ -172,7 +172,7 @@ Resources:
         Type: codepipeline
       Description: !Join
       - ''
-      - - 'AWS CodeStar created CodeBuild Project for '
+      - - 'Code Build for '
         - !Ref 'AppName'
       Environment:
         ComputeType: small
