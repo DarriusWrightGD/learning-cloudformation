@@ -1,0 +1,27 @@
+Resources:
+  SampleEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-e251209a
+      InstanceType: t2.micro
+      KeyName: us-west-2
+      SubnetId: subnet-0ece7645
+      SecurityGroupIds: 
+        - !Ref 'SampleSG'
+  SampleSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: vpc-b3536bca
+      GroupDescription: 'SG Created through cloudformation'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: 8.33.33.47/32
+
+
+
+
+  
+
+
