@@ -1,3 +1,10 @@
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: "The VPC Id"
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: "The Subnet Id"
 Resources:
   SampleEC2:
     Type: AWS::EC2::Instance
@@ -5,13 +12,13 @@ Resources:
       ImageId: ami-e251209a
       InstanceType: t2.micro
       KeyName: us-west-2
-      SubnetId: subnet-0ece7645
+      SubnetId: !Ref 'SubnetId'
       SecurityGroupIds: 
         - !Ref 'SampleSG'
   SampleSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId: vpc-b3536bca
+      VpcId: !Ref 'VpcId'
       GroupDescription: 'SG Created through cloudformation'
       SecurityGroupIngress:
         - IpProtocol: tcp
