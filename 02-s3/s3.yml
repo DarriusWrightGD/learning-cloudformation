@@ -1,0 +1,4 @@
+Resources:
+  SampleBucket:
+    Type: AWS::S3::Bucket
+    
