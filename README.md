@@ -29,3 +29,32 @@ Cloudformation creates those for you in the right order with the exact configura
 
 
 https://github.com/awslabs/ecs-refarch-continuous-deployment
+
+## Goal
+
+Create a CI/CD Pipeline that can live with the repository and report stats i.e. unit tests, coverage, etc over time.
+
+
+CodePipeline
+CodeDeploy
+CodeBuild
+Lambda - setup the lambda initially
+ApiGateway - setup the api gateway initially
+
+## Developer Notes
+
+### Cloudformation Stack Creation
+
+```bash
+# Creating a stack
+aws cloudformation create-stack --stack-name ec2-stack --template-body file://01-ec2/sample.yml --parameters ParameterKey=VpcId,ParameterValue=vpc-b3536bca ParameterKey=SubnetId,ParameterValue=subnet-01168978 --tags Key=Name,Value=darrius-ec2-stack
+```
+
+```bash
+# Deleting a stack
+aws cloudformation delete-stack --stack-name ec2-stack
+```
+
+```bash
+# List all existing stacks
+aws cloudformation list-stacks --query 'StackSummaries[?StackStatus!=`DELETE_COMPLETE` && StackStatus!=`DELETE_IN_PROGRESS`]'
