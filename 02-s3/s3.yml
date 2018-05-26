@@ -1,4 +1,10 @@
 Resources:
   SampleBucket:
     Type: AWS::S3::Bucket
-    
+    Properties:
+      BucketName: darrius-wright-bucket-1
+      Tags:
+        -
+          Key: "Name"
+          Value: "darrius-bucket"
+      

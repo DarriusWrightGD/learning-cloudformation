@@ -1,0 +1,18 @@
+Resources:
+  Website:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: wright-website-bucket-1
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        RoutingRules:
+          - 
+            RoutingRuleCondition:
+              HttpErrorCodeReturnedEquals: 404
+            RedirectRule:
+              ReplaceKeyWith: index.html
+      Tags:
+        - 
+          Key: Name
+          Value: wright-website
