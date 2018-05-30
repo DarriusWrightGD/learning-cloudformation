@@ -34,12 +34,11 @@ https://github.com/awslabs/ecs-refarch-continuous-deployment
 
 Create a CI/CD Pipeline that can live with the repository and report stats i.e. unit tests, coverage, etc over time.
 
-
 CodePipeline
 CodeDeploy
 CodeBuild
-Lambda - setup the lambda initially
-ApiGateway - setup the api gateway initially
+Lambda
+ApiGateway
 
 ## Developer Notes
 

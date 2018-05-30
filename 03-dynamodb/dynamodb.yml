@@ -1,0 +1,107 @@
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: "The VPC Id"
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: "The Subnet Id"
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: "The size of the EC2, e.g. t2.micro"
+  ImageId:
+    Type: String
+    Default: ami-e251209a
+    Description: "The image id for the EC2"
+  KeyName:
+    Type: String
+    Description: "The key name that will be used to ssh into the ec2 instance"
+Resources:
+  DynamoEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref "InstanceType"
+      SubnetId: !Ref "SubnetId"    
+      ImageId: !Ref "ImageId"
+      KeyName: !Ref "KeyName"
+      SecurityGroupIds: 
+        - !Ref "DynamoEC2Sg"
+      IamInstanceProfile: !Ref "DynamoDbInstanceProfile"
+  DynamoEC2Sg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security Group to allow the user to ssh into the dynamo ec2 instance"
+      VpcId: !Ref "VpcId"
+      SecurityGroupIngress:
+        -
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: "tcp"
+          Description: "Home SSH"
+          CidrIp: "8.33.33.47/32"
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "WrightDynamoDb"
+      AttributeDefinitions:
+        - 
+          AttributeName: "Id"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "Id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "1"
+        WriteCapacityUnits: "1"
+  DynamoDbRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "dynamodbAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:BatchGetItem"
+                  - "dynamodb:BatchWriteItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:Scan"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                Resource: 
+                  - !GetAtt DynamoDBTable.Arn
+                  - !Join
+                    - ""
+                    - -  !GetAtt DynamoDBTable.Arn
+                      -  "/index/*"
+              - 
+                Effect: "Allow"
+                Action: 
+                  - "dynamodb:ListTables"
+                  - "dynamodb:ListTagsOfResource"
+                Resource: "*"
+  DynamoDbInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        -
+          Ref: "DynamoDbRole"
