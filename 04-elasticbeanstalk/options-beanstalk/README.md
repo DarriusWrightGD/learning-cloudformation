@@ -15,7 +15,8 @@ Example parameters.json file
 
 ```json
 [
-    { "ParameterKey":"AppBucket",
+    { 
+     "ParameterKey":"AppBucket",
      "ParameterValue": "nginx-options-bucket-nginxappbucket-xxxxxxxx"
     },
     {
