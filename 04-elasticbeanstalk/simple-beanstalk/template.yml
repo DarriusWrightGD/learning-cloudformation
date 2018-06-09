@@ -1,0 +1,27 @@
+Parameters:
+  AppBucket:
+    Type: String
+    Description: The name of the stack that created the S3 Bucket which contains the versions of this application
+Resources:
+  NginxApp:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: NginxSampleApp
+      Description: A Sample Elasticbeanstalk Application
+  NginxAppVersion:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName: !Ref "NginxApp"
+      Description: Initial Version
+      SourceBundle:
+        S3Bucket: !Ref "AppBucket"
+        S3Key: Dockerrun.aws.json
+  NginxEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref "NginxApp"
+      EnvironmentName: sample-environment-1
+      CNAMEPrefix: nginx-elasticbeanstalk-sample
+      SolutionStackName: 64bit Amazon Linux 2018.03 v2.10.0 running Docker 17.12.1-ce
+      Description: A sample docker nginx elasticbeanstalk example
+      VersionLabel: !Ref NginxAppVersion
