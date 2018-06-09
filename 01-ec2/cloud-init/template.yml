@@ -1,0 +1,73 @@
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC for the EC2
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: The key pair used to ssh into the instance
+  SshIp:
+    Type: String
+    Description: The IP address allowed to ssh into the EC2 instance. To get yours go to http://ipecho.net/plain.
+  DockerImage:
+    Type: String
+    Default: nginx
+    Description: The name of the image for the template to use
+  DockerContainerPort:
+    Type: String
+    Default: 80
+    Description: The port that your docker image will run on
+Resources:
+  NginxEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref "KeyPair"
+      ImageId: ami-e251209a
+      SecurityGroupIds:
+        - !Ref "NginxSecurityGroup"
+      UserData:
+        "Fn::Base64": 
+          !Sub |
+            #!/bin/bash -xe
+            yum update -y aws-cfn-bootstrap
+            /opt/aws/bin/cfn-init -s ${AWS::StackId} -r NginxEC2 --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource NginxEC2 --region ${AWS::Region} || error_exit 'Failed to start cfn-hup'
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M # 15 minutes to perform setup
+    Metadata: 
+      Comment: Run a simple nginx server
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              docker: []
+          files:
+            "/tmp/nginx-start.sh":
+              content: !Sub |
+                  #!/bin/bash
+                  service docker start
+                  docker run -d -p 80:${DockerContainerPort} ${DockerImage}
+              mode: 004755
+          commands:
+            start-nginx:
+              command: /tmp/nginx-start.sh
+            complete:
+              command: !Sub "echo '${AWS::StackName} has completed commands'"
+  NginxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows access to port 80 on the ec2
+      VpcId: !Ref "VpcId"
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - 
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref "SshIp"
+      
