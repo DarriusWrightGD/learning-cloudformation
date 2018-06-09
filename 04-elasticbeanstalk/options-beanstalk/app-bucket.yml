@@ -1,0 +1,7 @@
+Resources:
+  NginxAppBucket:
+    Type: AWS::S3::Bucket
+Outputs:
+  BucketName:
+    Value: !Ref "NginxAppBucket"
+    Description: The bucket use by the elasticbeanstalk to retrieve it's versions

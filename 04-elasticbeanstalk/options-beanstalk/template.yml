@@ -1,0 +1,65 @@
+Parameters:
+  AppBucket:
+    Type: String
+    Description: The name of the stack that created the S3 Bucket which contains the versions of this application
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC for the Elasticbeanstalk
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Default: "subnet-01168978, subnet-8f4234d5"
+    Description: The subnets to use for your elasticbeanstalk
+Resources:
+  NginxApp:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: NginxSampleApp
+      Description: A Sample Elasticbeanstalk Application
+  NginxAppVersion:
+    Type: AWS::ElasticBeanstalk::ApplicationVersion
+    Properties:
+      ApplicationName: !Ref "NginxApp"
+      Description: Initial Version
+      SourceBundle:
+        S3Bucket: !Ref "AppBucket"
+        S3Key: Dockerrun.aws.json    
+  NginxEnvironment:
+    Type: AWS::ElasticBeanstalk::Environment
+    Properties:
+      ApplicationName: !Ref "NginxApp"
+      EnvironmentName: sample-environment-1
+      CNAMEPrefix: nginx-elasticbeanstalk-sample
+      SolutionStackName: 64bit Amazon Linux 2018.03 v2.10.0 running Docker 17.12.1-ce
+      Description: A sample docker nginx elasticbeanstalk example
+      VersionLabel: !Ref NginxAppVersion
+      OptionSettings:
+        - 
+          Namespace: aws:elasticbeanstalk:application
+          OptionName: Application Healthcheck URL
+          Value: /
+        - 
+          Namespace: aws:ec2:vpc
+          OptionName: VPCId
+          Value: !Ref "VPCId"
+        -
+          Namespace: aws:ec2:vpc
+          OptionName: Subnets
+          Value: !Join
+          - ','
+          - !Ref "SubnetIds"
+        -
+          Namespace: aws:elasticbeanstalk:environment
+          OptionName: LoadBalancerType
+          Value: application
+        -
+          Namespace: aws:elasticbeanstalk:healthreporting:system
+          OptionName: SystemType
+          Value: enhanced
+        -
+          Namespace: aws:autoscaling:launchconfiguration
+          OptionName: IamInstanceProfile
+          Value: aws-elasticbeanstalk-ec2-role
+        -
+          Namespace: aws:autoscaling:updatepolicy:rollingupdate
+          OptionName: RollingUpdateEnabled
+          Value: true
