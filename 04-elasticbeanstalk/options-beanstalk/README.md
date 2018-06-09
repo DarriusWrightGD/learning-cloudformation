@@ -10,3 +10,21 @@ aws s3 cp ./Dockerrun.aws.json s3://${BUCKETNAME}
 # Create parameters.json file with the parameters listed in template.yml
 aws cloudformation create-stack --stack-name nginx-eb-options --template-body file://template.yml --parameters file://parameters.json
 ```
+
+Example parameters.json file
+
+```json
+[
+    { "ParameterKey":"AppBucket",
+     "ParameterValue": "nginx-options-bucket-nginxappbucket-xxxxxxxx"
+    },
+    {
+     "ParameterKey": "SubnetIds",
+     "ParameterValue": "subnet-xxxx978, subnet-xxxx4d5"
+    },
+    {
+        "ParameterKey": "VPCId",
+        "ParameterValue": "vpc-xxxxxbca"
+    }
+]
+```
