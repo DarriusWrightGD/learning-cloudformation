@@ -4,10 +4,9 @@ Parameters:
     Description: The name of the stack that created the S3 Bucket which contains the versions of this application
   VPCId:
     Type: AWS::EC2::VPC::Id
-    Description: The VPC for the Elasticbeanstalk
+    Description: The VPC for the ElasticBeanstalk
   SubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Default: "subnet-01168978, subnet-8f4234d5"
     Description: The subnets to use for your elasticbeanstalk
 Resources:
   NginxApp:
