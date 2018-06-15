@@ -1,0 +1,50 @@
+ALB:
+  Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  Properties: 
+    SecurityGroups:
+      - 
+        Ref: ALBSecurityGroup
+    Subnets: 
+      Ref: Subnets
+    Type: application
+ALBListener:
+  Type: AWS::ElasticLoadBalancingV2::Listener
+  Properties:
+    LoadBalancerArn: 
+      Ref: ALB
+    Port: 80
+    Protocol: HTTP
+    DefaultActions:
+      - 
+        TargetGroupArn: 
+          Ref: ALBTargetGroup
+        Type: forward
+ALBTargetGroup:
+  Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  Properties:
+    VpcId: 
+      Ref: VpcId
+    Protocol: HTTP
+    Port: 
+      Ref: InstancePort
+ALBSecurityGroup:
+  Type: AWS::EC2::SecurityGroup
+  Properties:
+    GroupDescription: The alb Security Group
+    SecurityGroupIngress:
+      - 
+        CidrIp:
+          Fn::If:
+            - UseSecurityGroup
+            - Ref: AWS::NoValue
+            - Ref: CidrIp
+        SourceSecurityGroupId:
+          Fn::If:
+            - UseSecurityGroup
+            - Ref: SourceSecurityGroupId
+            - Ref: AWS::NoValue
+        FromPort: 80
+        ToPort: 80
+        IpProtocol: tcp
+    VpcId: 
+      Ref: VpcId

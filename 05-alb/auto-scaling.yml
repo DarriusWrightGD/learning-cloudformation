@@ -1,0 +1,76 @@
+Parameters:
+  TemplateUrl:
+    Type: String
+  AvailabilityZones:
+    Type: List<String>
+  ImageId:
+    Type: String
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  InstanceType:
+    Type: String
+    Default: t2.micro
+  CidrIp:
+    Type: String
+    Default: 0.0.0.0/0
+  SourceSecurityGroupId:
+    Type: String
+    Default: ""
+  InstancePort:
+    Type: String
+    Default: 80
+
+Conditions:
+  UseSecurityGroup: !Not [!Equals [!Ref SourceSecurityGroupId, ""]]
+
+Resources:
+  Fn::Transform:
+    Name: AWS::Include
+    Parameters: 
+      Location: !Ref TemplateUrl
+  NginxAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: !Ref AvailabilityZones
+      MinSize : 1
+      MaxSize : 1
+      LaunchConfigurationName: !Ref NginxLaunchConfig
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+  NginxLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker
+          service docker start
+          docker run -d -p 80:80 nginx
+      SecurityGroups:
+        - !Ref NginxSecurityGroup
+  NginxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows access to port 80 on the ec2
+      VpcId: !Ref "VpcId"
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId : !Ref ALBSecurityGroup
+Outputs:
+  ALBTargetGroupArn:
+    Description: The arn of the ALB that has been created, this can be used to attach the load balancer to auto scaling groups
+    Value: !Ref ALBTargetGroup
+  ALBSecurityGroupId:
+    Description: The security group id of the alb
+    Value: !Ref ALBSecurityGroup
+  ALBDnsName:
+    Description: The dns name of the alb
+    Value: !GetAtt ALB.DNSName
