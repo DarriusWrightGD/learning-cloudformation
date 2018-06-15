@@ -1,0 +1,94 @@
+Parameters:
+  KeyName:
+    Type: String
+  SnapshotId:
+    Type: String
+    Default: ""
+  IpAddress:
+    Type: String
+  AvailabilityZone:
+    Type: AWS::EC2::AvailabilityZone::Name
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  VolumeSize:
+    Type: Number
+    Default: 8
+Conditions:
+  UseSnapshot: !Not [!Equals [!Ref SnapshotId, ""]]
+Resources:
+  SnapshotEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      AvailabilityZone: !Ref "AvailabilityZone"
+      ImageId: ami-e251209a
+      KeyName: !Ref "KeyName"
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          # setup volume
+          echo "Creating jenkins folder"
+          mkdir /jenkins-data
+          # Check if there is a filesystem on the ebs
+          if blkid -o value -s TYPE /dev/xvdg
+          then
+            mount /dev/xvdg1 /jenkins-data
+          else
+            echo "Creating file system"
+            mkfs -t ext4 /dev/xvdg
+            echo "Mounting directory"
+            mount /dev/xvdg /jenkins-data
+            echo "Create jenkins home directory"
+            mkdir /jenkins-data/var
+            mkdir /jenkins-data/var/jenkins_home
+          fi
+
+          # install docker and start docker
+          echo "Installing and starting docker"
+          yum update -y
+          yum install docker -y
+          service docker start  
+          
+          # add jenkins permissions
+          echo "Creating Jenkins user"
+          useradd -u 1000 jenkins
+          echo "Modifying user group"
+          usermod -aG docker jenkins
+          echo "Changing ownership of the directory"
+          chown jenkins:jenkins /jenkins-data/var/jenkins_home
+          
+          # start the jenkins service
+          echo "Running the jenkins"
+          docker run -d -v /jenkins-data/var/jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock -p 80:8080 jenkins/jenkins
+      SecurityGroupIds:
+        - !Ref "SnapshotSecurityGroup"
+      Volumes:
+        -
+          VolumeId: !Ref "SnapshotVolume"
+          Device: /dev/sdg
+  SnapshotSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows access on ports 80 and 22
+      VpcId: !Ref "VpcId"
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref "IpAddress"
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref "IpAddress"
+  SnapshotVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      SnapshotId:
+        Fn::If:
+          - UseSnapshot
+          - Ref: SnapshotId
+          - Ref: AWS::NoValue
+      Size: !Ref VolumeSize
+      AvailabilityZone: !Ref "AvailabilityZone"
