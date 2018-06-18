@@ -1,0 +1,125 @@
+Parameters:
+  ImageId:
+    Type: String
+  NetworkStack:
+    Type: String
+  KeyName:
+    Type: String
+  InstanceType:
+    Type: String
+    Default: t2.micro
+  CidrIp:
+    Type: String
+    Default: 0.0.0.0/0
+  SourceSecurityGroupId:
+    Type: String
+    Default: ""
+  InstancePort:
+    Type: String
+    Default: 80
+Conditions:
+  UseSecurityGroup: !Not [!Equals [!Ref SourceSecurityGroupId, ""]]
+Resources:
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets: 
+        Fn::Split:
+          - ","
+          - Fn::ImportValue:
+              !Sub "${NetworkStack}-PublicSubnets"
+
+      Type: application
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - 
+          TargetGroupArn: !Ref ALBTargetGroup
+          Type: forward
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: 
+        Fn::ImportValue:
+          !Sub "${NetworkStack}-VpcId"
+      Protocol: HTTP
+      Port: !Ref InstancePort
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: The alb Security Group
+      SecurityGroupIngress:
+        - 
+          CidrIp:
+            Fn::If:
+              - UseSecurityGroup
+              - Ref: AWS::NoValue
+              - Ref: CidrIp
+          SourceSecurityGroupId:
+            Fn::If:
+              - UseSecurityGroup
+              - Ref: SourceSecurityGroupId
+              - Ref: AWS::NoValue
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+      VpcId: 
+        Fn::ImportValue:
+          !Sub "${NetworkStack}-VpcId"
+  NginxAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        Fn::Split:
+          - ","
+          - Fn::ImportValue:
+              !Sub "${NetworkStack}-PrivateSubnets"
+      MinSize : 2
+      MaxSize : 2
+      LaunchConfigurationName: !Ref NginxLaunchConfig
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+  NginxLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker
+          service docker start
+          docker run -d -p 80:80 nginx
+      SecurityGroups:
+        - !Ref NginxSecurityGroup
+  NginxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows access to port 80 on the ec2
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${NetworkStack}-VpcId"
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId : !Ref ALBSecurityGroup
+Outputs:
+  ALBTargetGroupArn:
+    Description: The arn of the ALB that has been created, this can be used to attach the load balancer to auto scaling groups
+    Value: !Ref ALBTargetGroup
+  ALBSecurityGroupId:
+    Description: The security group id of the alb
+    Value: !Ref ALBSecurityGroup
+  ALBDnsName:
+    Description: The dns name of the alb
+    Value: !GetAtt ALB.DNSName

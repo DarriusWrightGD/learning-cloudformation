@@ -1,0 +1,53 @@
+Parameters:
+  NetworkStack:
+    Type: String
+    Description: The VPC for the EC2
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: The key pair used to ssh into the instance
+  SshIp:
+    Type: String
+    Description: The IP address allowed to ssh into the EC2 instance. To get yours go to http://ipecho.net/plain. it should be in the format x.x.x.x/x i.e. 8.33.22.12/32
+Resources:
+  NginxInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref "KeyPair"
+      ImageId: ami-e251209a
+      SubnetId: 
+        Fn::ImportValue:
+          !Sub "${NetworkStack}-PublicSubnet1"
+      SecurityGroupIds:
+        - !Ref "NginxSecurityGroup"
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker
+          service docker start
+          docker run -d -p 80:80 nginx
+      Tags:
+        - 
+          Key: Name
+          Value: nginx-cloudformation-instance
+
+  NginxSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows access to port 80 on the ec2
+      VpcId: 
+        Fn::ImportValue:
+          !Sub "${NetworkStack}-VpcId"
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - 
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref "SshIp"
+      

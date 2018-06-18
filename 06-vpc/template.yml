@@ -1,0 +1,221 @@
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      Tags:
+        -
+          Key: Name
+          Value: custom-vpc
+  Ipv6VpcCidrBlock:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      AmazonProvidedIpv6CidrBlock: true
+      VpcId: !Ref Vpc
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        -
+          Key: Name
+          Value: custom-igw
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        -
+          Key: Name
+          Value: custom-routetable
+  IgwRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RouteTable
+      GatewayId: !Ref InternetGateway
+  IgwIpv6Route:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: ::/0
+      RouteTableId: !Ref RouteTable
+      GatewayId: !Ref InternetGateway
+  NatGateway1RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+  NatGateway2RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+  NatGatewayRoute1:
+    DependsOn: InternetGatewayAttachment
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref NatGateway1RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+  NatGatewayRoute2:
+    DependsOn: InternetGatewayAttachment
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref NatGateway2RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt Eip1.AllocationId
+      SubnetId: !Ref PublicSubnet1
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt Eip2.AllocationId
+      SubnetId: !Ref PublicSubnet2
+  Eip1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  Eip2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.1.0/24 # 251 custom addresses in the subnet
+      VpcId: !Ref Vpc
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: 
+        Fn::Select: 
+          - 0
+          - Fn::GetAZs: ""
+      Tags:
+        -
+          Key: Name
+          Value: custom-public-subnet-1
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.2.0/24 # 251 custom addresses in the subnet
+      VpcId: !Ref Vpc
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: 
+        Fn::Select: 
+          - 1
+          - Fn::GetAZs: ""
+      Tags:
+        -
+          Key: Name
+          Value: custom-public-subnet-2
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PublicSubnet1
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PublicSubnet2
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.3.0/24 # 251 custom addresses in the subnet
+      VpcId: !Ref Vpc
+      AvailabilityZone:       
+        Fn::Select: 
+          - 0
+          - Fn::GetAZs: ""
+      Tags:
+        -
+          Key: Name
+          Value: custom-private-subnet-1
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.4.0/24
+      VpcId: !Ref Vpc
+      AvailabilityZone: 
+        Fn::Select: 
+          - 1
+          - Fn::GetAZs: ""
+      Tags:
+        - 
+          Key: Name
+          Value: custom-private-subnet-2
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref NatGateway1RouteTable
+      SubnetId: !Ref PrivateSubnet1
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref NatGateway2RouteTable
+      SubnetId: !Ref PrivateSubnet2
+ 
+Outputs:
+  VpcId:
+    Description: The custom Vpc's id
+    Value: !Ref Vpc
+    Export: 
+      Name: !Sub "${AWS::StackName}-VpcId"
+  PublicSubnets:
+    Description: The public subnets created by the stack
+    Value: !Join
+    - ','
+    - -  !Ref PublicSubnet1
+      -  !Ref PublicSubnet2
+    Export: 
+      Name: !Sub "${AWS::StackName}-PublicSubnets"
+  PrivateSubnets:
+    Description: The private subnets crated by the stack
+    Value: !Join
+    - ','
+    - -  !Ref PrivateSubnet1
+      -  !Ref PrivateSubnet2
+    Export: 
+      Name: !Sub "${AWS::StackName}-PrivateSubnets"
+  PublicSubnetAZs:
+    Description: The public subnet availability zones
+    Value: !Join
+    - ','
+    - -  !GetAtt PublicSubnet1.AvailabilityZone
+      -  !GetAtt PublicSubnet2.AvailabilityZone  
+    Export: 
+      Name: !Sub "${AWS::StackName}-PublicSubnetAZs"
+  PrivateSubnetAZs:
+    Description: The public subnet availability zones
+    Value: !Join
+    - ','
+    - -  !GetAtt PrivateSubnet1.AvailabilityZone
+      -  !GetAtt PrivateSubnet2.AvailabilityZone
+    Export: 
+      Name: !Sub "${AWS::StackName}-PrivateSubnetAZs"
+  PublicSubnet1:
+    Description: The 1st private subnet
+    Value: !Ref PublicSubnet1
+    Export: 
+      Name: !Sub "${AWS::StackName}-PublicSubnet1"
+  PublicSubnet2:
+    Description: The 2nd private subnet
+    Value: !Ref PublicSubnet2
+    Export: 
+      Name: !Sub "${AWS::StackName}-PublicSubnet2-"
+  PrivateSubnet1:
+    Description: The 1st private subnet
+    Value: !Ref PrivateSubnet1
+    Export: 
+      Name: !Sub "${AWS::StackName}-PrivateSubnet1"
+  PrivateSubnet2:
+    Description: The 2nd private subnet
+    Value: !Ref PrivateSubnet2
+    Export: 
+      Name: !Sub "${AWS::StackName}-PrivateSubnet2"
+
