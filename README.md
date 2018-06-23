@@ -57,3 +57,76 @@ aws cloudformation delete-stack --stack-name ec2-stack
 ```bash
 # List all existing stacks
 aws cloudformation list-stacks --query 'StackSummaries[?StackStatus!=`DELETE_COMPLETE` && StackStatus!=`DELETE_IN_PROGRESS`]'
+```
+
+## The Well Architected Framework
+
+The five pillars
+
+- Security
+- Reliability
+- Performance Efficiency
+- Cost Optimization
+- Operational Excellence
+
+General Design Principles
+
+- Stop guessing your capacity needs
+    - eliminate guessing what you need, this will make you spend to much or little on resources
+- Test systems at production scale
+    - create a testing environment and destroy it
+- Automate to make architectural experimentation easier
+    - Use cloudformation for replication of your resources and allow of quick experimental checks
+- Allow for evolutionary architectures
+    - Automation allows you to innovate through dynamic architectures. This means that we can evolve our aws architecture as the business needs occur.
+- Data-Driven architectures
+    - Log things into cloudwatch to use data how to tell us what we need to do to improve our architecture
+- Improve through games days: simulates heavy load testing like black friday sales
+
+### Security
+
+- Apply security at all layers
+    - Subnets
+    - ACLs
+    - elb ports
+    - linux instances
+    - windows instances
+- Enable traceability
+    - if someone hacks the environment we should know how they did it
+- Automate response to security events
+    - Someone continualy trying to ssh into and instance from a non whitelisted ip.
+- Focus on securing your system
+    - Harden the operating system
+- Automate security best practices
+    - Apply the operating system hardening to an ami for launching
+
+#### Shared Responsibility Model
+
+You are responsible for security in the cloud
+
+- Network Traffic protection
+- Server-side encryption
+- Client-side Data Encryption & Data Integrity Authentication
+- Operating system, network, and firewall configuration
+- Platform, Applications, Identity and Access Management
+- Customer Data
+
+Amazon is responsible for security of the cloud
+
+- Compute, storage, database, networking
+- Regions, AZs, Edge Locations
+
+#### 4 Main areas
+
+- Data protection
+    - Segment between public and private to members of org
+    - Implement least privilege across roles
+    - Encrypt everything where possible rest/transit
+- Privilege Management
+- Infrastructure Protection
+- Detective controls
+
+### Reliability
+### Performance Efficiency
+### Cost Optimization
+### Operational Excellence

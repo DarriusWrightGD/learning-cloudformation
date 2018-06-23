@@ -1,0 +1,66 @@
+Parameters:
+  InstanceId:
+    Type: String
+Resources:
+  EC2Dashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: ec2-dashboard
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "x": 0,
+              "y": 0,
+              "type": "metric",
+              "width": 24,
+              "properties": {
+                "metrics": [
+                  ["AWS/EC2", "CPUUtilization", "InstanceId", "${InstanceId}"]
+                ],
+                "stat": "Average",
+                "view": "timeSeries",
+                "title": "EC2 CPU",
+                "region": "${AWS::Region}"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 2,
+              "y": 7,
+              "width": 9,
+              "height": 3,
+              "properties": {
+                "metrics": [
+                  ["AWS/EC2", "CPUUtilization", "InstanceId", "${InstanceId}"],
+                  [".", "NetworkIn", ".", "."],
+                  [".", "NetworkOut", ".", "."]
+                ],
+                "period": 86400,
+                "stat": "Average",
+                "view": "singleValue",
+                "title": "Averages",
+                "region": "${AWS::Region}"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 13,
+              "y": 7,
+              "width": 9,
+              "height": 3,
+              "properties": {
+                "metrics": [
+                  ["AWS/EC2", "StatusCheckFailed", "InstanceId", "${InstanceId}"],
+                  ["AWS/EC2", "StatusCheckFailed_Instance", ".", "."],
+                  ["AWS/EC2", "StatusCheckFailed_System", ".", "."]
+                ],
+                "period": 86400,
+                "stat": "Sum",
+                "view": "singleValue",
+                "title": "Status Checks",
+                "region": "${AWS::Region}"
+              }
+            }
+          ]
+        }
