@@ -1,0 +1,66 @@
+Parameters:
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  IpAddress:
+    Type: String
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+  MountPoint:
+    Type: String
+    Default: efs-mount
+Resources:
+  Instance:
+    Type: AWS::EC2::Instance
+    DependsOn: EFSMount 
+    Properties:
+      ImageId: ami-e251209a
+      InstanceType: t2.micro
+      SubnetId: !Ref SubnetId
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref InstanceSG
+        - !Ref GeneralSG
+      UserData: 
+        Fn::Base64:
+          Fn::Sub: |
+            #!/bin/bash
+            echo "Creating mount point"
+            mkdir /${MountPoint}
+            echo "Attaching mount to ${EFS}"
+            mount -t nfs4 -o nfsvers=4.1 ${EFS}.efs.${AWS::Region}.amazonaws.com:/ /${MountPoint}
+            echo "Updating permissions on mount point"
+            chown ec2-user:ec2-user /${MountPoint}
+  InstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: The Instance SecurityGroup
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - 
+          CidrIp: !Ref IpAddress
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+  GeneralSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: The general SecurityGroup for the EFS and Instance
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        -
+          SourceSecurityGroupId: !Ref InstanceSG
+          FromPort: 2049
+          ToPort: 2049
+          IpProtocol: tcp
+  EFS:
+    Type: AWS::EFS::FileSystem
+  EFSMount:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFS
+      SecurityGroups:
+        - !Ref GeneralSG
+      SubnetId: !Ref SubnetId
+

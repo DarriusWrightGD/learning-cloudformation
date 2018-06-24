@@ -5,13 +5,16 @@ Parameters:
   SubnetId:
     Type: AWS::EC2::Subnet::Id
     Description: "The Subnet Id"
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: "The key pair name"
 Resources:
   SampleEC2:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: ami-e251209a
       InstanceType: t2.micro
-      KeyName: us-west-2
+      KeyName: !Ref 'KeyName'
       SubnetId: !Ref 'SubnetId'
       SecurityGroupIds: 
         - !Ref 'SampleSG'
