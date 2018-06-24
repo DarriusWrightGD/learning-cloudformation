@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam
+  Sample SAM Template for sam
+    
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: nodejs8.10
+
+Resources:
+  HelloWorldApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody:
+        swagger: 2.0
+        schemes:
+          - https
+        info:
+          title: !Ref AWS::StackName
+        produces:
+          - application/json
+        paths:
+          "/hello-world":
+            get:
+              responses:
+                "200": 
+                  description: OK
+                  schema:
+                    type: string
+                    example: Hello World!
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub:
+                    - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}/invocations
+                    - { FunctionArn: !GetAtt HelloWorldFunction.Arn }
+          "/healthcheck":
+            get:
+              responses:
+                "200": 
+                  description: OK
+                  schema:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        description: The status of the api
+                        example: OK
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub:
+                    - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}/invocations
+                    - { FunctionArn: !GetAtt HelloWorldFunction.Arn }
+          "/ping":
+            get:
+              responses:
+                "200": 
+                  description: OK
+                  schema:
+                    type: string
+                    example: pong
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub:
+                    - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionArn}/invocations
+                    - { FunctionArn: !GetAtt HelloWorldFunction.Arn }
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello_world/
+      Handler: index.handler
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /hello-world
+            Method: get
+            RestApiId: !Ref HelloWorldApi
+        Healthcheck:
+          Type: Api
+          Properties:
+            Path: /healthcheck
+            Method: get
+            RestApiId: !Ref HelloWorldApi
+        Ping:
+          Type: Api
+          Properties:
+            Path: /ping
+            Method: get
+            RestApiId: !Ref HelloWorldApi
+
+Outputs:
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${HelloWorldApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/" 
+  HelloWorldFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt HelloWorldFunction.Arn 
+  HelloWorldFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt HelloWorldFunctionRole.Arn

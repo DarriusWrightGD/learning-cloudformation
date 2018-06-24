@@ -1,0 +1,17 @@
+{
+  "name": "sam",
+  "version": "1.0.0",
+  "description": "This is a sample template for sam - Below is a brief explanation of what we have generated for you:",
+  "main": "index.js",
+  "scripts": {
+    "start": "sam local start-api",
+    "package": "cross-env-shell sam package --template-file ./template.yaml --s3-bucket ${BUCKET_NAME} --output-template-file packaged.yaml",
+    "deploy": "sam deploy --template-file ./packaged.yaml --stack-name hello-lambda --capabilities CAPABILITY_IAM"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cross-env": "5.2.0"
+  }
+}
