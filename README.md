@@ -7,40 +7,34 @@ Cloudformation creates those for you in the right order with the exact configura
 ## Benefits
 
 - Infrastructure as code
-    - No manually created code
-    - The code can be versioned
-    - Changes to the infrastructure are reviewed as code
+
+  - No manually created code
+  - The code can be versioned
+  - Changes to the infrastructure are reviewed as code
 
 - Cost
-    - Each resources within the stack is tagged so you can see how much it costs you.
-    - You can automate deletion of the templates
+  - Each resources within the stack is tagged so you can see how much it costs you.
+  - You can automate deletion of the templates
 - Productivity
-    - Ability to destroy and recreate infrastructure on the fly
-    - Automated generation of diagram for your templates
+
+  - Ability to destroy and recreate infrastructure on the fly
+  - Automated generation of diagram for your templates
 
 - Separation of concerns
-    - VPC stacks
-    - Network stacks
-    - App stacks
+
+  - VPC stacks
+  - Network stacks
+  - App stacks
 
 - Don't re-invent the wheel
-    - Leverage existing templates on the web
-    - Leverage Documentation
-
+  - Leverage existing templates on the web
+  - Leverage Documentation
 
 https://github.com/awslabs/ecs-refarch-continuous-deployment
 
-## Goal
-
-Create a CI/CD Pipeline that can live with the repository and report stats i.e. unit tests, coverage, etc over time.
-
-CodePipeline
-CodeDeploy
-CodeBuild
-Lambda
-ApiGateway
-
 ## Developer Notes
+
+**Important**: all examples are in us-west-2
 
 ### Cloudformation Stack Creation
 
@@ -72,33 +66,33 @@ The five pillars
 General Design Principles
 
 - Stop guessing your capacity needs
-    - eliminate guessing what you need, this will make you spend to much or little on resources
+  - eliminate guessing what you need, this will make you spend to much or little on resources
 - Test systems at production scale
-    - create a testing environment and destroy it
+  - create a testing environment and destroy it
 - Automate to make architectural experimentation easier
-    - Use cloudformation for replication of your resources and allow of quick experimental checks
+  - Use cloudformation for replication of your resources and allow of quick experimental checks
 - Allow for evolutionary architectures
-    - Automation allows you to innovate through dynamic architectures. This means that we can evolve our aws architecture as the business needs occur.
+  - Automation allows you to innovate through dynamic architectures. This means that we can evolve our aws architecture as the business needs occur.
 - Data-Driven architectures
-    - Log things into cloudwatch to use data how to tell us what we need to do to improve our architecture
+  - Log things into cloudwatch to use data how to tell us what we need to do to improve our architecture
 - Improve through games days: simulates heavy load testing like black friday sales
 
 ### Security
 
 - Apply security at all layers
-    - Subnets
-    - ACLs
-    - elb ports
-    - linux instances
-    - windows instances
+  - Subnets
+  - ACLs
+  - elb ports
+  - linux instances
+  - windows instances
 - Enable traceability
-    - if someone hacks the environment we should know how they did it
+  - if someone hacks the environment we should know how they did it
 - Automate response to security events
-    - Someone continualy trying to ssh into and instance from a non whitelisted ip.
+  - Someone continualy trying to ssh into and instance from a non whitelisted ip.
 - Focus on securing your system
-    - Harden the operating system
+  - Harden the operating system
 - Automate security best practices
-    - Apply the operating system hardening to an ami for launching
+  - Apply the operating system hardening to an ami for launching
 
 #### Shared Responsibility Model
 
@@ -119,14 +113,17 @@ Amazon is responsible for security of the cloud
 #### 4 Main areas
 
 - Data protection
-    - Segment between public and private to members of org
-    - Implement least privilege across roles
-    - Encrypt everything where possible rest/transit
+  - Segment between public and private to members of org
+  - Implement least privilege across roles
+  - Encrypt everything where possible rest/transit
 - Privilege Management
 - Infrastructure Protection
 - Detective controls
 
 ### Reliability
+
 ### Performance Efficiency
+
 ### Cost Optimization
+
 ### Operational Excellence
