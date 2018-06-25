@@ -1,0 +1,105 @@
+Parameters:
+  VpcId:
+    Type: String
+    Default: vpc-b3536bca
+  SubnetId:
+    Type: String
+    Default: subnet-01168978
+  KeyName:
+    Type: String
+  ImageId:
+    Type: String
+    Default: ami-d2f489aa
+  
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: EcsAutoScalingGroup
+    Properties:
+      Cluster: !Ref Cluster
+      DesiredCount: 1
+      TaskDefinition: !Ref TaskDefinitions
+  EcsAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: [ !Ref 'SubnetId' ]
+      LaunchConfigurationName: !Ref 'EcsLaunchConfig'
+      MinSize: 1
+      MaxSize: 1
+      DesiredCapacity: 1
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: 'true'
+  EcsLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref ImageId
+      SecurityGroups: [!Ref 'EcsSecurityGroup']
+      InstanceType: t2.micro
+      IamInstanceProfile: !Ref 'EC2InstanceProfile'
+      KeyName: !Ref KeyName
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource EcsAutoScalingGroup --region ${AWS::Region}
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: The ecs security group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        -
+          CidrIp: 8.33.33.47/32
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+        -
+          CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ec2.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: ['ecs:CreateCluster', 'ecs:DeregisterContainerInstance', 'ecs:DiscoverPollEndpoint',
+              'ecs:Poll', 'ecs:RegisterContainerInstance', 'ecs:StartTelemetrySession',
+              'ecs:Submit*', 'logs:CreateLogStream', 'logs:PutLogEvents']
+            Resource: '*'
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles: [!Ref 'EC2Role']
+  TaskDefinitions:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - 
+          Image: nginx
+          Name: nginx
+          MemoryReservation: 300
+          PortMappings:
+            -
+              ContainerPort: 80
+              HostPort: 80
+              Protocol: tcp
